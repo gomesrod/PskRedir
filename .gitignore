@@ -1,7 +1,14 @@
 *.ncb
 *.suo
-*.obj
 *.manifest
 *.idb
 *.pdb
+*.opensdf
+*.sdf
+
 BuildLog.htm
+
+/src/ipch/
+
+/src/PskRedir/Debug/
+/src/Debug/

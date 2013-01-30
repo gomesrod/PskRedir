@@ -134,9 +134,9 @@ bool SimpleSocket::ActiveConnection::isNull() {
 }
 
 int SimpleSocket::ActiveConnection::read(byte** o_data) {
-
+	return 0; //TODO
 }
 
 bool SimpleSocket::ActiveConnection::write(byte * data, int len) {
-
+	return 0; //TODO
 }

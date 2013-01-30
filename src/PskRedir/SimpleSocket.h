@@ -41,7 +41,7 @@ public:
 		//typedef unsigned char byte;
 
 		friend ActiveConnection SimpleSocket::acceptConnection();
-		friend ActiveConnection connectToHost(std::string address, short port, std::string* o_errMsg);
+		friend ActiveConnection SimpleSocket::connectToHost(std::string address, short port, std::string* o_errMsg);
 	public:
 		~ActiveConnection();
 		bool isNull();
