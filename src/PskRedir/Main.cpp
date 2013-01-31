@@ -8,7 +8,7 @@
 
 #include <csignal>
 
-#define STANDARD_CONFIG_LOCATION "powerredir.conf";
+#define STANDARD_CONFIG_LOCATION "pskredir.conf";
 
 using namespace std;
 
@@ -19,6 +19,8 @@ RedirEngine engine;
 
 int main(int argc, char** argv)
 {
+	cout << ">>>> PskRedir - The Personal Socket Redirection service >>>>" << endl;
+
 	int ret; // General-purpose return value
 
 	AppConfig config;
@@ -42,7 +44,7 @@ int loadConfiguration(int argc, char** argv, AppConfig* config)
 {
 	string configPath;
 	if (argc > 1) {
-		configPath = argv[0];
+		configPath = argv[1];
 	} else {
 		configPath = STANDARD_CONFIG_LOCATION;
 	}

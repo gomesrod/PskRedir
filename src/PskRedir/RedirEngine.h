@@ -11,6 +11,8 @@ private:
 	bool interrupted;
 
 	void handleRedir(SimpleSocket& server);
+	void forwardDataIfAvailable(SimpleSocket::ActiveConnection& origin, SimpleSocket::ActiveConnection& dest,
+								byte** databuff, int* databuffLen);
 
 public:
 	void setConfig(const AppConfig &conf);
