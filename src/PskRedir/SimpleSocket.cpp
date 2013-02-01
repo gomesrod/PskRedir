@@ -9,7 +9,12 @@
 using namespace std;
 
 const int SimpleSocket::LISTEN_BACKLOG_SIZE = 2;
+
+#ifdef PSKDEBUG
+const int SimpleSocket::RECEIVE_TIMEOUT_MICROSECS = 2000000; // Work with bigger time intervals when debugging.
+#else
 const int SimpleSocket::RECEIVE_TIMEOUT_MICROSECS = 1000;
+#endif
 
 /* ********************************************************************
 *   SimpleSoclet class Implementation
@@ -31,7 +36,7 @@ void SimpleSocket::initSocketLib()
 {
 	WSADATA winsock_info;
 	if (int retcode = WSAStartup(MAKEWORD(2,0), (LPWSADATA)&winsock_info) != 0) {
-		throw SocketException(myutils::buildErrorMessage("Error initializing Socket library!", retcode));
+		throw SocketException(pskutils::buildErrorMessage("Error initializing Socket library!", retcode));
 	}
 }
 
@@ -44,7 +49,7 @@ void SimpleSocket::listen(std::string listenIp, short port)
 {
 	_listenSocketHandle = socket(AF_INET, SOCK_STREAM, 0);
 	if (_listenSocketHandle == INVALID_SOCKET) {
-		throw SocketException(myutils::buildErrorMessage("socket() err:", WSAGetLastError()));
+		throw SocketException(pskutils::buildErrorMessage("socket() err:", WSAGetLastError()));
 	}
 
 	sockaddr_in listenAddr = {};
@@ -63,33 +68,29 @@ void SimpleSocket::listen(std::string listenIp, short port)
 
 	ret = bind(_listenSocketHandle, (const sockaddr *)&listenAddr, sizeof(sockaddr_in));
 	if (ret == SOCKET_ERROR) {
-		throw SocketException(myutils::buildErrorMessage("bind() err:", WSAGetLastError()));
+		throw SocketException(pskutils::buildErrorMessage("bind() err:", WSAGetLastError()));
 	}
 
 	::listen(_listenSocketHandle, LISTEN_BACKLOG_SIZE);
 }
 
-
-/* ********************************************************************
-*   SimpleSoclet::ActiveConnection class Implementation
-**********************************************************************/
-SOCKET SimpleSocket::acceptConnection() {
+SimpleSocket::ActiveConnection SimpleSocket::acceptConnection() {
 	sockaddr_in clientAddress;
 	int clientAddressSize = sizeof clientAddress;
 
 	SOCKET serverSocket = accept(_listenSocketHandle, reinterpret_cast<sockaddr *>(&clientAddress), &clientAddressSize);
 
 	if (serverSocket == INVALID_SOCKET) {
-		throw SocketException(myutils::buildErrorMessage("acceptConnection() err:", WSAGetLastError()));
+		throw SocketException(pskutils::buildErrorMessage("acceptConnection() err:", WSAGetLastError()));
 	}
 
-	return serverSocket;
+	return ActiveConnection(serverSocket);
 }
 
-SOCKET SimpleSocket::connectToHost(std::string addr, short port) {
+SimpleSocket::ActiveConnection SimpleSocket::connectToHost(std::string addr, short port) {
 	SOCKET clientSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (clientSocket == INVALID_SOCKET) {
-		throw SocketException(myutils::buildErrorMessage("SimpleSocket::connectToHost socket() err:", WSAGetLastError()));
+		throw SocketException(pskutils::buildErrorMessage("SimpleSocket::connectToHost socket() err:", WSAGetLastError()));
 	}
 
 	struct addrinfo hints = {};
@@ -98,33 +99,49 @@ SOCKET SimpleSocket::connectToHost(std::string addr, short port) {
 
 	struct addrinfo * servHostPtr;
     
-	int addrinforetcode = getaddrinfo(addr.c_str(), myutils::numToString<short>(port).c_str(), &hints, &servHostPtr);
+	int addrinforetcode = getaddrinfo(addr.c_str(), pskutils::numToString<short>(port).c_str(), &hints, &servHostPtr);
 	if (addrinforetcode != 0) {
 		closesocket(clientSocket);
-		throw SocketException(myutils::buildErrorMessage("SimpleSocket::connectToHost getaddrinfo() err:", WSAGetLastError()));		
+		throw SocketException(pskutils::buildErrorMessage("SimpleSocket::connectToHost getaddrinfo() err:", WSAGetLastError()));		
 	}
 
 	int connretcode = connect(clientSocket, servHostPtr->ai_addr, sizeof(sockaddr));
 	freeaddrinfo(servHostPtr);
 	if (connretcode != 0) {
 		closesocket(clientSocket);
-		throw SocketException(myutils::buildErrorMessage("SimpleSocket::connectToHost connect() err:", WSAGetLastError()));
+		throw SocketException(pskutils::buildErrorMessage("SimpleSocket::connectToHost connect() err:", WSAGetLastError()));
 	}
 
-	return clientSocket;
+	return ActiveConnection(clientSocket);
 }
 
+/* ********************************************************************
+*   SimpleSoclet::ActiveConnection class Implementation
+**********************************************************************/
 SimpleSocket::ActiveConnection::ActiveConnection(SOCKET sock) :
-															connsocket(sock){
-	DEBUGMSG("ctor ActiveConnection::ActiveConnection. Sock=");
+	connsocket(sock)
+{
+	DEBUGMSG("New ActiveConnection constructed. Sock=");
 	DEBUGNUM(sock);
 	if (sock != 0) {
-		stillActive = true;
+		peerActive = true;
 	}
+}
+
+SimpleSocket::ActiveConnection::ActiveConnection(const ActiveConnection& other) :
+	connsocket(other.connsocket)
+{
+	DEBUGMSG("Copying connection. Getting ownership of socket:");
+	DEBUGNUM(connsocket);
+
+	// This constness break is expected, as the API explicit says that
+	// after copy-constructing the original object will be no longer
+	// valid.
+	(const_cast<ActiveConnection&>(other)).connsocket = INVALID_SOCKET;
 }
 
 SimpleSocket::ActiveConnection::~ActiveConnection() {
-	DEBUGMSG("dtor ActiveConnection::~ActiveConnection. CLOSING Sock=");
+	DEBUGMSG("~ActiveConnection destructed. CLOSE Sock=");
 	DEBUGNUM(connsocket);
 	if (connsocket > 0) {
 		closesocket(connsocket);
@@ -147,9 +164,9 @@ int SimpleSocket::ActiveConnection::read(byte* databuffer, int buffsize) {
 		DEBUGNUM(size);
 
 		if (size < 0) {
-			throw SocketException(myutils::buildErrorMessage("recv() err:", WSAGetLastError()));
+			throw SocketException(pskutils::buildErrorMessage("recv() err:", WSAGetLastError()));
 		} else if (size == 0) {
-			stillActive = false;
+			peerActive = false;
 			return -1; // The remote size has closed the connection
 		} else {
 			// Ok
@@ -161,7 +178,7 @@ int SimpleSocket::ActiveConnection::read(byte* databuffer, int buffsize) {
 	}
 }
 
-void SimpleSocket::ActiveConnection::write(byte * data, int len) {
+bool SimpleSocket::ActiveConnection::write(byte * data, int len) {
 	// Call the send function as many times as needed, in order to
 	// send the whole message.
 	int offset = 0;
@@ -174,16 +191,18 @@ void SimpleSocket::ActiveConnection::write(byte * data, int len) {
 		if (bytesSent < 0) {
 			int errcode = WSAGetLastError();
 			if (errcode == WSAECONNRESET) {
-				stillActive = false; // The remote size has closed the connection
-				return;
+				peerActive = false; // The remote size has closed the connection
+				return false;
 			}
 
-			throw SocketException(myutils::buildErrorMessage("send() err:", WSAGetLastError()));
+			throw SocketException(pskutils::buildErrorMessage("send() err:", WSAGetLastError()));
 		}
 
 		bytesToSend -= bytesSent;
 		offset += bytesSent;
 	}
+
+	return true;
 }
 
 

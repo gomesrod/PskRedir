@@ -5,7 +5,7 @@
 #include <sstream>
 #include <iterator>
 
-namespace myutils
+namespace pskutils
 {
 	using namespace std;
 
@@ -26,7 +26,7 @@ namespace myutils
 			str.erase(endActualString + 1, string::npos);
 	}
 
-	void splitInWhitespaces(string & str, stringvector & outputvec)
+	void splitInWhitespaces(string & str, vector<string>& outputvec)
 	{
 		istringstream stream(str);
 		istream_iterator<string> iterator(stream);
@@ -52,9 +52,5 @@ namespace myutils
 		stringstream ss;
 		ss << text << number;
 		return ss.str();
-	}
-
-	void sysout(const string& text) {
-		cout << "SYSOUT>> " << text << endl;
 	}
 }

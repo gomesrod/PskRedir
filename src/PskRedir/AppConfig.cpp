@@ -35,7 +35,7 @@ bool AppConfig::load(string configFilePath)
 	// Empty lines and comments (#) are discarded
 	while (!infile.eof()) {
 		getline(infile, readbuff);
-		myutils::trim(readbuff);
+		pskutils::trim(readbuff);
 
 		if (readbuff.length() != 0
 				&& readbuff[0] != '#') {
@@ -50,8 +50,8 @@ bool AppConfig::load(string configFilePath)
 		return false;
 	}
 
-	stringvector tokens;
-	myutils::splitInWhitespaces(readbuff, tokens);
+	vector<string> tokens;
+	pskutils::splitInWhitespaces(readbuff, tokens);
 
 	if (tokens.size() != 4) {
 		cerr << "Invalid configuration data: " << readbuff << endl;
@@ -59,31 +59,11 @@ bool AppConfig::load(string configFilePath)
 	}
 
 	this->listenIp = tokens[0];
-	this->listenPort = myutils::parseNum<short>(tokens[1]);
+	this->listenPort = pskutils::parseNum<short>(tokens[1]);
 	this->forwardHost = tokens[2];
-	this->forwardPort = myutils::parseNum<short>(tokens[3]);
+	this->forwardPort = pskutils::parseNum<short>(tokens[3]);
 
 	return true;
-}
-
-string AppConfig::getListenIp()
-{
-	return listenIp;
-}
-
-short AppConfig::getListenPort()
-{
-	return listenPort;
-}
-
-string AppConfig::getForwardHost()
-{
-	return forwardHost;
-}
-
-short AppConfig::getForwardPort()
-{
-	return forwardPort;
 }
 
 string AppConfig::prettyFormat()

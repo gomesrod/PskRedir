@@ -2,12 +2,10 @@
 #include <vector>
 #include <sstream>
 
-typedef std::vector<std::string> stringvector;
-
-namespace myutils
+namespace pskutils
 {
 	/**
-	* Trims the string.
+	* Trims the given string.
 	*/
 	void trim(std::string & str);
 
@@ -15,11 +13,10 @@ namespace myutils
 	* Splits the string on whitespaces, putting the resulting
 	* tokens into the given vector.
 	*/
-	void splitInWhitespaces(std::string & str, stringvector & outputvec);
+	void splitInWhitespaces(std::string & str, std::vector<std::string>& outputvec);
 
 	/**
 	* Parses the string to the given number type.
-	* (Por ser um template a declaração deve estar definido no mesmo arquivo do header)
 	*/
 	template<typename T>
 	T parseNum(std::string & s) 
@@ -31,7 +28,6 @@ namespace myutils
 
 	/**
 	* Converts the number to its string representation.
-	* (Por ser um template a declaração deve estar definido no mesmo arquivo do header)
 	*/
 	template<typename T>
 	std::string numToString(T num) 
@@ -47,9 +43,4 @@ namespace myutils
 	* "Error doing XXXXX. Retcode = 100"
 	*/
 	std::string buildErrorMessage(const std::string& text, const int number);
-
-	/**
-	* Prints an arbitrary message to the standard output.
-	*/
-	void sysout(const std::string& text);
 }

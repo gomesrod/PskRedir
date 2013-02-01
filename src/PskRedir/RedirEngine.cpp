@@ -15,11 +15,11 @@ int RedirEngine::run() {
 		SimpleSocket server;
 		server.listen(config.getListenIp(), config.getListenPort());
 
-		cout << "IN socket listening...." << endl;
+		DEBUGMSG("IN socket listening");
 
 		this->interrupted = false;
 		while (!this->interrupted) {
-			handleRedir(server);
+			handleRedirection(server);
 		}
 
 	} catch (SocketException& se) {
@@ -27,41 +27,37 @@ int RedirEngine::run() {
 		return 1;
 	}
 
-	cout << "Interrupting services..." << endl;
+	DEBUGMSG("Interrupting services...");
+
 	SimpleSocket::cleanupSocketLib();
 	return 0;
 }
 
-void RedirEngine::handleRedir(SimpleSocket& server) {
+void RedirEngine::handleRedirection(SimpleSocket& server) {
+	// Waits from a connection from the client.
 	DEBUGMSG("Accepting connections...");
 	SimpleSocket::ActiveConnection cliConn(server.acceptConnection());
 	DEBUGMSG("Client connection received");
 
 	// Start a new forward connection.
-
 	DEBUGMSG("Connecting to forward host...");
 	SimpleSocket::ActiveConnection forwardConn(SimpleSocket::connectToHost(
 											config.getForwardHost(), config.getForwardPort()));
 
-	cout << "Connection established. Start package forwarding..." << endl;
+	DEBUGMSG("Connection established. Start package forwarding...");
 
-	int databuffLen = 2048; // Grows as needed.
+	int databuffLen = 4096; // Grows if needed.
 	byte* databuff = new byte[databuffLen];
 
 	try {
 		/* 
 		* Forward data from one side to the other, until some of them closes the connection.
 		*/ 
-		while (cliConn.isStillActive() && forwardConn.isStillActive()) {
-			DEBUGNUM(cliConn.isStillActive());
-			DEBUGNUM(forwardConn.isStillActive());
-
-			memset(databuff, 0, databuffLen);
-
+		while (cliConn.isPeerActive() && forwardConn.isPeerActive()) {
 			DEBUGMSG("Polling message from cliConn");
 			forwardDataIfAvailable(cliConn, forwardConn, &databuff, &databuffLen);
 
-			if (cliConn.isStillActive()) {
+			if (cliConn.isPeerActive()) {
 				DEBUGMSG("Polling message from forwardConn");
 				forwardDataIfAvailable(forwardConn, cliConn, &databuff, &databuffLen);
 			}
@@ -80,7 +76,7 @@ void RedirEngine::forwardDataIfAvailable(SimpleSocket::ActiveConnection& origin,
 		DEBUGNUM(bytesRead);
 
 		if (bytesRead == -1) {
-			// The connection is gone. Do nothing, the connection object should be flagged in order to stop processing.
+			// The connection is gone. Do nothing, the socket is already flagged (peer inactive) in order to stop processing.
 			DEBUGMSG("Connection closed by remote host");
 			retry = false;
 		} else if (bytesRead == 0) {

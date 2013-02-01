@@ -1,33 +1,43 @@
-// PowerRedir.cpp : Defines the entry point for the console application.
+// Main.cpp : Defines the entry point for the console application.
 //
 #include "AppConfig.h"
 #include "SimpleSocket.h"
 #include "RedirEngine.h"
 
 #include <iostream>
-
 #include <csignal>
-
-#define STANDARD_CONFIG_LOCATION "pskredir.conf";
 
 using namespace std;
 
+static const char* STANDARD_CONFIG_LOCATION = "pskredir.conf";
+
+/**
+* Loads the configuration file, based on the command-line argument.
+*/
 int loadConfiguration(int argc, char** argv, AppConfig* config);
+
+/**
+* Called by the signal handler to interrupt the daemon.
+*/
 void interruptEngine(int);
 
+/**
+*
+*/
 RedirEngine engine;
 
+/**
+*
+*/
 int main(int argc, char** argv)
 {
 	cout << ">>>> PskRedir - The Personal Socket Redirection service >>>>" << endl;
 
-	int ret; // General-purpose return value
-
 	AppConfig config;
-	ret = loadConfiguration(argc, argv, &config);
+	int loadConfigRet = loadConfiguration(argc, argv, &config);
 
-	if (ret != 0) {
-		return ret;
+	if (loadConfigRet != 0) {
+		return loadConfigRet;
 	}
 
 	engine.setConfig(config);
@@ -35,9 +45,9 @@ int main(int argc, char** argv)
 	signal(SIGINT, &interruptEngine);
 	signal(SIGTERM, &interruptEngine);
 
-	ret = engine.run();
+	int engineRet = engine.run();
 	
-	return ret;
+	return engineRet;
 }
 
 int loadConfiguration(int argc, char** argv, AppConfig* config)

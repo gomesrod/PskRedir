@@ -89,7 +89,7 @@
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\%40rodrigo_home\repos\PskRedir\src\PskRedir\debug.h" />
+    <ClInclude Include="..\..\..\..\..\%40rodrigo_home\projetos\PskRedir\src\PskRedir\debug.h" />
     <ClInclude Include="AppConfig.h" />
     <ClInclude Include="RedirEngine.h" />
     <ClInclude Include="SimpleSocket.h" />
