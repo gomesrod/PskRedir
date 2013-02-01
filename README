@@ -1,7 +1,69 @@
 ######################################################
 #
 # PskRedir
-# The Personal Socket Redirection Service
+# Personal Socket Redirection Service
+#
 ######################################################
+
+This is a small daemon that redirect data from a network socket
+to another configured address.
+It can be roughly compared to a lightweight NAT service.
+
+
+######################################################
+# History
+##
+The application was created to solve a specific problem in our environment:
+
+The host (A) did not have any internet access because it was on a
+isolated test network, thus could not reach the Internet Proxy Server (B).
+Eventually the (A) machine had a need to connect to an update site
+in order to download some packages.
+
+That's when the PskRedir was created. It allowed a simple Windows workstation
+(which had access to both networks) to act as a "proxy to proxy", and
+the machine (A) could successfully reach the internet proxy.
+
+
+[A] <-------> [Workstation with PskRedir] <-------> [B = Internet Proxy]
+
+(Forwards data between A and B simulating a direct connection)
+
+
+######################################################
+# How to use
+##
+Too simple!
+
+Just copy the executable to any directory, and create a configuration file
+pskredir.conf containing a line with the following information
+
+0.0.0.0 LISTEN_PORT fwd_host FWD_PORT
+
+Where:
+0.0.0.0 = The interface on which the application listens for connections.
+          Currently only the 0.0.0.0 (All interfaces) is supported.
+LISTEN_PORT = The port where clients will connect.
+
+fwd_host and FWD_PORT = Where the connection should be forwarded to.
+
+Start the executable and it will wait for client connections.
+When they connect, PskRedir itself opens a connection to the Forward
+Host and starts exchanging packages between both nodes.
+
+
+######################################################
+# Limitations
+##
+PskRedir has some limitations:
+- Supports ONE single client connection.
+- Is not optimized for best performance. The transmission "from A to B"
+  and "from B to A" happen in a single thread.
+
+Given that, PskRedir is not a production-quality software.
+Do not try to make services available to users through this software!
+
+But it you need an ad-hoc quick and simple network redirection, this
+could be the solution for you.
 
 
