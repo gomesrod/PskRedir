@@ -5,6 +5,7 @@
 *.pdb
 *.opensdf
 *.sdf
+*.o
 
 BuildLog.htm
 
@@ -12,3 +13,5 @@ BuildLog.htm
 
 /src/PskRedir/Debug/
 /src/Debug/
+/src/PskRedir/Release/
+/src/Release/

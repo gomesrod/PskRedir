@@ -3,8 +3,16 @@
 
 #include "debug.h"
 
+#if defined(WIN32)
 #include <ws2tcpip.h>
 #include <winerror.h>
+#else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <errno.h>
+#endif
 
 using namespace std;
 
@@ -14,6 +22,17 @@ const int SimpleSocket::LISTEN_BACKLOG_SIZE = 2;
 const int SimpleSocket::RECEIVE_TIMEOUT_MICROSECS = 2000000; // Work with bigger time intervals when debugging.
 #else
 const int SimpleSocket::RECEIVE_TIMEOUT_MICROSECS = 1000;
+#endif
+
+#if defined(WIN)
+#define ERROR_CODE_CONN_RESET WSAECONNRESET
+#define ERROR_CODE_BAD_SOCKET WSAEBADF
+#else
+#define ERROR_CODE_CONN_RESET ECONNRESET
+#define ERROR_CODE_BAD_SOCKET EBADF
+
+#define INVALID_SOCKET -1
+#define SOCKET_ERROR -1
 #endif
 
 /* ********************************************************************
@@ -28,28 +47,32 @@ SimpleSocket::SimpleSocket() :
 SimpleSocket::~SimpleSocket()
 {
 	if (_listenSocketHandle != INVALID_SOCKET) {
-		closesocket(_listenSocketHandle);
+		closeSock(_listenSocketHandle);
 	}
 }
 
 void SimpleSocket::initSocketLib()
 {
+#ifdef WIN32
 	WSADATA winsock_info;
 	if (int retcode = WSAStartup(MAKEWORD(2,0), (LPWSADATA)&winsock_info) != 0) {
 		throw SocketException(pskutils::buildErrorMessage("Error initializing Socket library!", retcode));
 	}
+#endif
 }
 
 void SimpleSocket::cleanupSocketLib()
 {
+#ifdef WIN32
 	WSACleanup();
+#endif
 }
 
 void SimpleSocket::listen(std::string listenIp, short port) 
 {
 	_listenSocketHandle = socket(AF_INET, SOCK_STREAM, 0);
 	if (_listenSocketHandle == INVALID_SOCKET) {
-		throw SocketException(pskutils::buildErrorMessage("socket() err:", WSAGetLastError()));
+		throw SocketException(pskutils::buildErrorMessage("socket() err:", socketLastError()));
 	}
 
 	sockaddr_in listenAddr = {};
@@ -68,20 +91,34 @@ void SimpleSocket::listen(std::string listenIp, short port)
 
 	ret = bind(_listenSocketHandle, (const sockaddr *)&listenAddr, sizeof(sockaddr_in));
 	if (ret == SOCKET_ERROR) {
-		throw SocketException(pskutils::buildErrorMessage("bind() err:", WSAGetLastError()));
+		throw SocketException(pskutils::buildErrorMessage("bind() err:", socketLastError()));
 	}
 
 	::listen(_listenSocketHandle, LISTEN_BACKLOG_SIZE);
 }
 
+void SimpleSocket::stopListening()
+{
+	if (_listenSocketHandle != INVALID_SOCKET) {
+		closeSock(_listenSocketHandle);
+		_listenSocketHandle = INVALID_SOCKET;
+	}
+}
+
 SimpleSocket::ActiveConnection SimpleSocket::acceptConnection() {
 	sockaddr_in clientAddress;
-	int clientAddressSize = sizeof clientAddress;
+	socklen_t clientAddressSize = sizeof clientAddress;
 
 	SOCKET serverSocket = accept(_listenSocketHandle, reinterpret_cast<sockaddr *>(&clientAddress), &clientAddressSize);
 
 	if (serverSocket == INVALID_SOCKET) {
-		throw SocketException(pskutils::buildErrorMessage("acceptConnection() err:", WSAGetLastError()));
+	    int lastErr = socketLastError();
+	    if (lastErr == ERROR_CODE_BAD_SOCKET) {
+	      throw SocketException("Accept connect failed. Invalid socket");
+	    } else {
+	      throw SocketException(pskutils::buildErrorMessage("acceptConnection() err:", 
+			lastErr));
+	    }
 	}
 
 	return ActiveConnection(serverSocket);
@@ -90,7 +127,7 @@ SimpleSocket::ActiveConnection SimpleSocket::acceptConnection() {
 SimpleSocket::ActiveConnection SimpleSocket::connectToHost(std::string addr, short port) {
 	SOCKET clientSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (clientSocket == INVALID_SOCKET) {
-		throw SocketException(pskutils::buildErrorMessage("SimpleSocket::connectToHost socket() err:", WSAGetLastError()));
+		throw SocketException(pskutils::buildErrorMessage("SimpleSocket::connectToHost socket() err:", socketLastError()));
 	}
 
 	struct addrinfo hints = {};
@@ -101,18 +138,36 @@ SimpleSocket::ActiveConnection SimpleSocket::connectToHost(std::string addr, sho
     
 	int addrinforetcode = getaddrinfo(addr.c_str(), pskutils::numToString<short>(port).c_str(), &hints, &servHostPtr);
 	if (addrinforetcode != 0) {
-		closesocket(clientSocket);
-		throw SocketException(pskutils::buildErrorMessage("SimpleSocket::connectToHost getaddrinfo() err:", WSAGetLastError()));		
+		closeSock(clientSocket);
+		throw SocketException(pskutils::buildErrorMessage("SimpleSocket::connectToHost getaddrinfo() err:", socketLastError()));		
 	}
 
 	int connretcode = connect(clientSocket, servHostPtr->ai_addr, sizeof(sockaddr));
 	freeaddrinfo(servHostPtr);
 	if (connretcode != 0) {
-		closesocket(clientSocket);
-		throw SocketException(pskutils::buildErrorMessage("SimpleSocket::connectToHost connect() err:", WSAGetLastError()));
+		closeSock(clientSocket);
+		throw SocketException(pskutils::buildErrorMessage("SimpleSocket::connectToHost connect() err:", socketLastError()));
 	}
 
 	return ActiveConnection(clientSocket);
+}
+
+int SimpleSocket::socketLastError()
+{
+#ifdef WIN32
+	return WSAGetLastError();
+#else
+	return errno;
+#endif
+}
+
+void SimpleSocket::closeSock(SOCKET sock)
+{
+  #ifdef WIN32
+	closesocket(sock);
+#else
+	close(sock);
+#endif
 }
 
 /* ********************************************************************
@@ -144,27 +199,36 @@ SimpleSocket::ActiveConnection::~ActiveConnection() {
 	DEBUGMSG("~ActiveConnection destructed. CLOSE Sock=");
 	DEBUGNUM(connsocket);
 	if (connsocket > 0) {
-		closesocket(connsocket);
+		closeSock(connsocket);
 	}
 }
 
 int SimpleSocket::ActiveConnection::read(byte* databuffer, int buffsize) {
 	fd_set readfds = {0};
-	readfds.fd_count = 1;
-	readfds.fd_array[0] = connsocket;
+	//readfds.fd_count = 1;
+	//readfds.fd_array[0] = connsocket;
+	FD_ZERO(&readfds);
+	FD_SET(connsocket, &readfds);
 
 	timeval timeout;
 	timeout.tv_sec = 0;
 	timeout.tv_usec = RECEIVE_TIMEOUT_MICROSECS;
+	
+	DEBUGMSG("FD_ISSET");
+	DEBUGNUM(FD_ISSET(connsocket, &readfds));
+	if (select(connsocket+1, &readfds, 0, 0, &timeout) < 0) {
+	  throw SocketException(pskutils::buildErrorMessage("select() err:", socketLastError()));
+	}
+	
+	DEBUGNUM(FD_ISSET(connsocket, &readfds));
 
-	select(0, &readfds, 0, 0, &timeout);
 	if (FD_ISSET(connsocket, &readfds)) {
 		int size = recv(connsocket, reinterpret_cast<char *>(databuffer), buffsize, 0);
 		
 		DEBUGNUM(size);
 
 		if (size < 0) {
-			throw SocketException(pskutils::buildErrorMessage("recv() err:", WSAGetLastError()));
+			throw SocketException(pskutils::buildErrorMessage("recv() err:", socketLastError()));
 		} else if (size == 0) {
 			peerActive = false;
 			return -1; // The remote size has closed the connection
@@ -189,13 +253,13 @@ bool SimpleSocket::ActiveConnection::write(byte * data, int len) {
 		// the rest of the message
 		int bytesSent = send(connsocket, reinterpret_cast<char *>(data + offset), len, 0);
 		if (bytesSent < 0) {
-			int errcode = WSAGetLastError();
-			if (errcode == WSAECONNRESET) {
+			int errcode = socketLastError();
+			if (errcode == ERROR_CODE_CONN_RESET) {
 				peerActive = false; // The remote size has closed the connection
 				return false;
 			}
 
-			throw SocketException(pskutils::buildErrorMessage("send() err:", WSAGetLastError()));
+			throw SocketException(pskutils::buildErrorMessage("send() err:", socketLastError()));
 		}
 
 		bytesToSend -= bytesSent;
@@ -210,6 +274,6 @@ bool SimpleSocket::ActiveConnection::write(byte * data, int len) {
 *   SocketException class Implementation
 **********************************************************************/
 SocketException::SocketException (const std::string& msg) 
-	: runtime_error(msg)
+	: std::runtime_error(msg)
 {
 }

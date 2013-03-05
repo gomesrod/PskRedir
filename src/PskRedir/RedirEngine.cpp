@@ -12,7 +12,6 @@ int RedirEngine::run() {
 	try {
 		SimpleSocket::initSocketLib();
 
-		SimpleSocket server;
 		server.listen(config.getListenIp(), config.getListenPort());
 
 		DEBUGMSG("IN socket listening");
@@ -42,7 +41,7 @@ void RedirEngine::handleRedirection(SimpleSocket& server) {
 	// Start a new forward connection.
 	DEBUGMSG("Connecting to forward host...");
 	SimpleSocket::ActiveConnection forwardConn(SimpleSocket::connectToHost(
-											config.getForwardHost(), config.getForwardPort()));
+			config.getForwardHost(), config.getForwardPort()));
 
 	DEBUGMSG("Connection established. Start package forwarding...");
 
@@ -62,6 +61,7 @@ void RedirEngine::handleRedirection(SimpleSocket& server) {
 				forwardDataIfAvailable(forwardConn, cliConn, &databuff, &databuffLen);
 			}
 		}
+		DEBUGMSG("Connection ended");
 		delete databuff;
 	} catch (...) {
 		delete databuff;
@@ -86,7 +86,7 @@ void RedirEngine::forwardDataIfAvailable(SimpleSocket::ActiveConnection& origin,
 			delete[] *databuff;
 			*databuffLen *= 2;
 			DEBUGMSG("Reallocating buffer. NewLen:");
-			DEBUGNUM(databuffLen);
+			DEBUGNUM(*databuffLen);
 			*databuff = new byte[*databuffLen];
 		} else {
 			// Ok. Send the message to the other side.
@@ -104,4 +104,5 @@ void RedirEngine::setConfig(const AppConfig& conf) {
 
 void RedirEngine::interrupt() {
 	this->interrupted = true;
+	server.stopListening();
 }

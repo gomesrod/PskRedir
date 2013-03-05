@@ -22,7 +22,7 @@ namespace pskutils
 	T parseNum(std::string & s) 
 	{
 		T num;
-		stringstream(s) >> num;
+		std::stringstream(s) >> num;
 		return num;
 	}
 
@@ -32,7 +32,7 @@ namespace pskutils
 	template<typename T>
 	std::string numToString(T num) 
 	{
-		ostringstream ostrstr;
+		std::ostringstream ostrstr;
 		ostrstr << num;
 		return ostrstr.str();
 	}

@@ -1,10 +1,20 @@
 #include <string>
 #include <exception>
+#include <stdexcept>
 
+#if defined(WIN32)
 #include "winsock2.h"
+#else
+#include "sys/types.h"
+#include "sys/socket.h"
+#endif
 
 #ifndef POWERREDIR_SIMPLESOCKET_H
 #define POWERREDIR_SIMPLESOCKET_H
+
+#ifndef WIN32
+typedef int SOCKET;
+#endif
 
 /**
 * Represents network errors.
@@ -41,6 +51,11 @@ public:
 	*/
 	void listen(std::string listenIp, short port);
 
+	/**
+	 * Forces the listening socket to close.
+	 */
+	void stopListening();
+	
 	// Forward declaration
 	class ActiveConnection;
 
@@ -65,7 +80,7 @@ public:
 		typedef unsigned char byte;
 
 		friend ActiveConnection SimpleSocket::acceptConnection();
-		friend static ActiveConnection SimpleSocket::connectToHost(std::string address, short port);
+		friend ActiveConnection SimpleSocket::connectToHost(std::string address, short port);
 
 	public:
 		/**
@@ -131,6 +146,9 @@ private:
 	static const int RECEIVE_TIMEOUT_MICROSECS;
 
 	SOCKET _listenSocketHandle;
+
+	static int socketLastError();
+	static void closeSock(SOCKET sock);
 };
 
 inline bool SimpleSocket::ActiveConnection::isPeerActive() {

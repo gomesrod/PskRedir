@@ -6,9 +6,13 @@
 * Contains the application core logic.
 */
 class RedirEngine {
+  
+typedef unsigned char byte;
+
 private:
 	AppConfig config;
 	bool interrupted;
+	SimpleSocket server;
 
 	/**
 	* Handles the main daemon loop.
