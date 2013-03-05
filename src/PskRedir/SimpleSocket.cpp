@@ -24,7 +24,7 @@ const int SimpleSocket::RECEIVE_TIMEOUT_MICROSECS = 2000000; // Work with bigger
 const int SimpleSocket::RECEIVE_TIMEOUT_MICROSECS = 1000;
 #endif
 
-#if defined(WIN)
+#ifdef WIN32
 #define ERROR_CODE_CONN_RESET WSAECONNRESET
 #define ERROR_CODE_BAD_SOCKET WSAEBADF
 #else
@@ -205,9 +205,9 @@ SimpleSocket::ActiveConnection::~ActiveConnection() {
 
 int SimpleSocket::ActiveConnection::read(byte* databuffer, int buffsize) {
 	fd_set readfds = {0};
-	//readfds.fd_count = 1;
-	//readfds.fd_array[0] = connsocket;
 	FD_ZERO(&readfds);
+// warning C4127: conditional expression is constant   - na macro FD_SET (VS 2010)
+#pragma warning(suppress : 4127)
 	FD_SET(connsocket, &readfds);
 
 	timeval timeout;
