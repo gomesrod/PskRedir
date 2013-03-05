@@ -58,8 +58,8 @@ bool AppConfig::load(string configFilePath)
 		return false;
 	}
 
-	this->listenIp = tokens[0];
-	this->listenPort = pskutils::parseNum<short>(tokens[1]);
+	this->clientIp = tokens[0];
+	this->clientPort = pskutils::parseNum<short>(tokens[1]);
 	this->forwardHost = tokens[2];
 	this->forwardPort = pskutils::parseNum<short>(tokens[3]);
 
@@ -69,8 +69,8 @@ bool AppConfig::load(string configFilePath)
 string AppConfig::prettyFormat()
 {
 	stringstream ss;
-	ss << "Listen IP = " << listenIp;
-	ss << ", Listen Port = " << listenPort;
+	ss << "Listen IP = " << clientIp;
+	ss << ", Listen Port = " << clientPort;
 	ss << ", Forward Host = " << forwardHost;
 	ss << ", Forward Port = " << forwardPort;
 	return ss.str();

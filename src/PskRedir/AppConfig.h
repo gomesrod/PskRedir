@@ -10,8 +10,8 @@
 class AppConfig
 {
 private:
-	std::string listenIp;
-	short listenPort;
+	std::string clientIp;
+	short clientPort;
 	std::string forwardHost;
 	short forwardPort;
 	
@@ -29,8 +29,8 @@ public:
 	*/
 	bool load(std::string configFilePath);
 
-	inline std::string getListenIp();
-	inline short getListenPort();
+	inline std::string getClientIp();
+	inline short getClientPort();
 	inline std::string getForwardHost();
 	inline short getForwardPort();
 
@@ -40,14 +40,14 @@ public:
 	std::string prettyFormat();
 };
 
-inline std::string AppConfig::getListenIp()
+inline std::string AppConfig::getClientIp()
 {
-	return listenIp;
+	return clientIp;
 }
 
-inline short AppConfig::getListenPort()
+inline short AppConfig::getClientPort()
 {
-	return listenPort;
+	return clientPort;
 }
 
 inline std::string AppConfig::getForwardHost()

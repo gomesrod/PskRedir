@@ -2,7 +2,7 @@
 //
 #include "AppConfig.h"
 #include "SimpleSocket.h"
-#include "RedirEngine.h"
+#include "ListenConnRedirEngine.h"
 
 #include <iostream>
 #include <csignal>
@@ -24,7 +24,7 @@ void interruptEngine(int);
 /**
 *
 */
-RedirEngine engine;
+BaseRedirEngine* engine;
 
 /**
 *
@@ -40,13 +40,15 @@ int main(int argc, char** argv)
 		return loadConfigRet;
 	}
 
-	engine.setConfig(config);
+	engine = new ListenConnRedirEngine;
+	engine->setConfig(config);
 
 	signal(SIGINT, &interruptEngine);
 	signal(SIGTERM, &interruptEngine);
 
-	int engineRet = engine.run();
+	int engineRet = engine->run();
 	
+	delete engine;
 	return engineRet;
 }
 
@@ -69,5 +71,5 @@ int loadConfiguration(int argc, char** argv, AppConfig* config)
 
 void interruptEngine(int sig) {
 	cout << "Signal received: " << sig << endl;
-	engine.interrupt();
+	engine->interrupt();
 }

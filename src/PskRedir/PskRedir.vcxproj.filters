@@ -21,21 +21,21 @@
     <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RedirEngine.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SimpleSocket.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\..\%40rodrigo_projects\projetos\PskRedir\src\PskRedir\BaseRedirEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ListenConnRedirEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AppConfig.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="RedirEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SimpleSocket.h">
@@ -44,7 +44,13 @@
     <ClInclude Include="utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\%40rodrigo_home\projetos\PskRedir\src\PskRedir\debug.h">
+    <ClInclude Include="..\..\..\..\..\%40rodrigo_projects\projetos\PskRedir\src\PskRedir\debug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\%40rodrigo_projects\projetos\PskRedir\src\PskRedir\BaseRedirEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ListenConnRedirEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

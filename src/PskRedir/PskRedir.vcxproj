@@ -82,16 +82,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\..\%40rodrigo_projects\projetos\PskRedir\src\PskRedir\BaseRedirEngine.cpp" />
     <ClCompile Include="AppConfig.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="RedirEngine.cpp" />
+    <ClCompile Include="ListenConnRedirEngine.cpp" />
     <ClCompile Include="SimpleSocket.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\%40rodrigo_home\projetos\PskRedir\src\PskRedir\debug.h" />
+    <ClInclude Include="..\..\..\..\..\%40rodrigo_projects\projetos\PskRedir\src\PskRedir\BaseRedirEngine.h" />
+    <ClInclude Include="..\..\..\..\..\%40rodrigo_projects\projetos\PskRedir\src\PskRedir\debug.h" />
     <ClInclude Include="AppConfig.h" />
-    <ClInclude Include="RedirEngine.h" />
+    <ClInclude Include="ListenConnRedirEngine.h" />
     <ClInclude Include="SimpleSocket.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
