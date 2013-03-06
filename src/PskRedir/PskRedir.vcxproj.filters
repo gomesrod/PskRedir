@@ -33,6 +33,9 @@
     <ClCompile Include="ListenConnRedirEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\..\%40rodrigo_projects\projetos\PskRedir\src\PskRedir\ListenListenRedirEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AppConfig.h">
@@ -51,6 +54,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ListenConnRedirEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\%40rodrigo_projects\projetos\PskRedir\src\PskRedir\ListenListenRedirEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

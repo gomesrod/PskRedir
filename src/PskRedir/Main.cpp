@@ -3,6 +3,7 @@
 #include "AppConfig.h"
 #include "SimpleSocket.h"
 #include "ListenConnRedirEngine.h"
+#include "ListenListenRedirEngine.h"
 
 #include <iostream>
 #include <csignal>
@@ -40,7 +41,14 @@ int main(int argc, char** argv)
 		return loadConfigRet;
 	}
 
-	engine = new ListenConnRedirEngine;
+	if (config.getMode() == AppConfig::LISTEN_CONNECT) {
+		engine = new ListenConnRedirEngine;
+	} else if (config.getMode() == AppConfig::LISTEN_LISTEN) {
+		engine = new ListenListenRedirEngine;
+	} else {
+		// This is not possible,the mode was validated by the configuration parser
+		throw logic_error("Unknown operation mode");
+	}
 	engine->setConfig(config);
 
 	signal(SIGINT, &interruptEngine);
@@ -55,10 +63,19 @@ int main(int argc, char** argv)
 int loadConfiguration(int argc, char** argv, AppConfig* config)
 {
 	string configPath;
-	if (argc > 1) {
+	if (argc == 2 && string("/?") != argv[1] && string("--help") != argv[1]) {
 		configPath = argv[1];
-	} else {
+	} else if (argc == 1) {
 		configPath = STANDARD_CONFIG_LOCATION;
+	} else {
+		cout << "Usage: " 
+			<< endl
+			<< "    " << argv[0] << " <configuration_file>" 
+			<< endl
+			<< "        or:" << endl
+			<< "    " << argv[0] << "  # no-args call: use standard file " << STANDARD_CONFIG_LOCATION
+			<< endl;
+		return 1;
 	}
 
 	cout << "Loading config from " << configPath << endl;

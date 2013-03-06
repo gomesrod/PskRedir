@@ -36,7 +36,34 @@ void BaseRedirEngine::interrupt() {
 	this->interruptCurrentActivity();
 }
 
-void BaseRedirEngine::forwardDataIfAvailable(SimpleSocket::ActiveConnection& origin, SimpleSocket::ActiveConnection& dest, byte** databuff, int* databuffLen) {
+void BaseRedirEngine::exchangePackagesUntilDisconnect(SimpleSocket::ActiveConnection& conn1, SimpleSocket::ActiveConnection& conn2)
+{
+	int databuffLen = 4096; // Grows if needed.
+	BaseRedirEngine::byte* databuff = new BaseRedirEngine::byte[databuffLen];
+
+	try {
+		/* 
+		* Forward data from one side to the other, until some of them closes the connection.
+		*/ 
+		while (conn1.isPeerActive() && conn2.isPeerActive()) {
+			DEBUGMSG("Polling message from cliConn");
+			forwardDataIfAvailable(conn1, conn2, &databuff, &databuffLen);
+
+			if (conn1.isPeerActive()) {
+				DEBUGMSG("Polling message from forwardConn");
+				forwardDataIfAvailable(conn2, conn1, &databuff, &databuffLen);
+			}
+		}
+		DEBUGMSG("Connection ended");
+		delete databuff;
+	} catch (...) {
+		delete databuff;
+		throw;
+	}
+}
+
+void BaseRedirEngine::forwardDataIfAvailable(SimpleSocket::ActiveConnection& origin, SimpleSocket::ActiveConnection& dest, byte** databuff, int* databuffLen) 
+{
 	bool retry = true;
 	while(retry) {
 		int bytesRead = origin.read(*databuff, *databuffLen);

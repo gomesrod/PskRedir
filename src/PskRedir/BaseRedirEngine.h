@@ -53,6 +53,11 @@ protected:
 	virtual void interruptCurrentActivity() = 0;
 
 	/**
+	* Exchange packages between the sockets, until une of them disconnects.
+	*/
+	void exchangePackagesUntilDisconnect(SimpleSocket::ActiveConnection& conn1, SimpleSocket::ActiveConnection& conn2);
+
+	/**
 	* If the origin socket has any data available for reading, send it to the destination socket.
 	*
 	* The caller is responsible for providing a data buffer. This allows the buffer to be reused

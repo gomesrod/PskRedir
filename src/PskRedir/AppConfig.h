@@ -9,13 +9,9 @@
 */
 class AppConfig
 {
-private:
-	std::string clientIp;
-	short clientPort;
-	std::string forwardHost;
-	short forwardPort;
-	
 public:
+	enum OperationMode {LISTEN_CONNECT, LISTEN_LISTEN, CONNECT_CONNECT};
+
 	AppConfig();
 	~AppConfig();
 
@@ -28,7 +24,8 @@ public:
 	* Any error will be reported through the standard error stream.
 	*/
 	bool load(std::string configFilePath);
-
+	
+	inline OperationMode getMode();
 	inline std::string getClientIp();
 	inline short getClientPort();
 	inline std::string getForwardHost();
@@ -38,7 +35,24 @@ public:
 	* Format the configuration data for display.
 	*/
 	std::string prettyFormat();
+
+	private:
+	OperationMode mode;
+	std::string clientIp;
+	short clientPort;
+	std::string forwardHost;
+	short forwardPort;
+	
+	/**
+	* Parses the string-representation of the operation mode.
+	*/
+	OperationMode parseMode(std::string modeStr);
 };
+
+inline AppConfig::OperationMode AppConfig::getMode()
+{
+	return mode;
+}
 
 inline std::string AppConfig::getClientIp()
 {

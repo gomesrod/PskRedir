@@ -53,15 +53,21 @@ bool AppConfig::load(string configFilePath)
 	vector<string> tokens;
 	pskutils::splitInWhitespaces(readbuff, tokens);
 
-	if (tokens.size() != 4) {
+	if (tokens.size() != 5) {
 		cerr << "Invalid configuration data: " << readbuff << endl;
 		return false;
 	}
 
-	this->clientIp = tokens[0];
-	this->clientPort = pskutils::parseNum<short>(tokens[1]);
-	this->forwardHost = tokens[2];
-	this->forwardPort = pskutils::parseNum<short>(tokens[3]);
+	try {
+		this->mode = parseMode(tokens[0]);
+	} catch (runtime_error& err) {
+		cerr << err.what() << endl;
+		return false;
+	}
+	this->clientIp = tokens[1];
+	this->clientPort = pskutils::parseNum<short>(tokens[2]);
+	this->forwardHost = tokens[3];
+	this->forwardPort = pskutils::parseNum<short>(tokens[4]);
 
 	return true;
 }
@@ -74,4 +80,15 @@ string AppConfig::prettyFormat()
 	ss << ", Forward Host = " << forwardHost;
 	ss << ", Forward Port = " << forwardPort;
 	return ss.str();
+}
+
+AppConfig::OperationMode AppConfig::parseMode(std::string modeStr)
+{
+	if (string("LISTEN_CONN") == modeStr) {
+		return LISTEN_CONNECT;
+	} else if (string("LISTEN_LISTEN") == modeStr) {
+		return LISTEN_LISTEN;
+	} else {
+		throw runtime_error(string("Invalid operation mode: ").append(modeStr));
+	}
 }

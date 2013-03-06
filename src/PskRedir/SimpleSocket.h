@@ -84,13 +84,27 @@ public:
 
 	public:
 		/**
+		* Constructs a null connection
+		*/
+		ActiveConnection();
+
+		/**
 		* Copy constructor transfers the socket ownership from the other instance.
 		*
 		* Important:
 		* After copy-constructing, the former instance will NOT be in a valid state;
 		* it no longer will hold an active network socket.
+		* The "const" modifier exists only to allow temporary objects to be used as parameter
 		*/
 		ActiveConnection(const ActiveConnection&);
+
+		/**
+		* Transfer socket ownership from the other instance.
+		*
+		* The former object will not be in a valid state after this call.
+		* The "const" modifier exists only to allow temporary objects to be used as parameter
+		*/
+		ActiveConnection& operator=(const ActiveConnection&);
 
 		/**
 		* Destroys this object BY CLOSING THE ASSOCIATED SOCKET CONNECTION.
@@ -127,6 +141,18 @@ public:
 		*/
 		inline bool isPeerActive();
 
+		/**
+		* Forces closing of the underlying socket.
+		* Calling this is not required, as the destructor automatically does the cleaning.
+		*/
+		void destroy();
+
+		/**
+		* Represents this connection as a boolean, resulting true when active. Only results
+		* false after a call to destroy()
+		*/
+		operator bool();
+
 	private:
 		SOCKET connsocket;
 		bool peerActive;
@@ -135,9 +161,6 @@ public:
 		* Constructable only by the friend SimpleSocket methods.
 		*/
 		ActiveConnection(SOCKET sock);
-
-		// Assignment Forbidden
-		ActiveConnection& operator=(ActiveConnection&);
 	};
 	/* **** End of ActiveConnection class *****************************/
 

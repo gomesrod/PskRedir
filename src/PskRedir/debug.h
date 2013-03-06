@@ -1,6 +1,6 @@
 
 // undef this to disable debugging
-// # define PSKDEBUG
+#define PSKDEBUG
 
 #ifdef PSKDEBUG
 

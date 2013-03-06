@@ -184,17 +184,37 @@ SimpleSocket::ActiveConnection::ActiveConnection(SOCKET sock) :
 }
 
 SimpleSocket::ActiveConnection::ActiveConnection(const ActiveConnection& other) :
-	connsocket(other.connsocket)
+	connsocket(other.connsocket),
+	peerActive(other.peerActive)
 {
 	DEBUGMSG("Copying connection. Getting ownership of socket:");
 	DEBUGNUM(connsocket);
 
-	// This constness break is expected, as the API explicit says that
+	// This constness break is expected, as the API for this constructor explicit says that
 	// after copy-constructing the original object will be no longer
 	// valid.
 	(const_cast<ActiveConnection&>(other)).connsocket = INVALID_SOCKET;
 }
 
+SimpleSocket::ActiveConnection::ActiveConnection() :
+	connsocket(0)
+{
+}
+	
+SimpleSocket::ActiveConnection& SimpleSocket::ActiveConnection::operator=(const ActiveConnection& other) 
+{
+	connsocket = other.connsocket;
+	peerActive = other.peerActive;
+
+	DEBUGMSG("Assigning connection. Getting ownership of socket:");
+	DEBUGNUM(connsocket);
+
+	// This constness break is expected, as the API for this method explicit says that
+	// after the assignment the original object will be no longer valid.
+	(const_cast<ActiveConnection&>(other)).connsocket = INVALID_SOCKET;
+
+	return *this;
+}
 SimpleSocket::ActiveConnection::~ActiveConnection() {
 	DEBUGMSG("~ActiveConnection destructed. CLOSE Sock=");
 	DEBUGNUM(connsocket);
@@ -269,6 +289,18 @@ bool SimpleSocket::ActiveConnection::write(byte * data, int len) {
 	return true;
 }
 
+void SimpleSocket::ActiveConnection::destroy()
+{
+	if (connsocket > 0) {
+		closeSock(connsocket);
+		connsocket = 0;
+	}
+}
+
+SimpleSocket::ActiveConnection::operator bool()
+{
+	return connsocket != 0;
+}
 
 /* ********************************************************************
 *   SocketException class Implementation
