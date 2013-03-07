@@ -1,5 +1,6 @@
 #include "ListenListenRedirEngine.h"
 #include "debug.h"
+#include <cstring>
 
 using namespace std;
 

@@ -16,7 +16,10 @@ compile: create_dirs
 	$(compiler) -c -o $(temp_obj_dir)/utils.o $(src_dir)/utils.cpp
 	$(compiler) -c -o $(temp_obj_dir)/AppConfig.o $(src_dir)/AppConfig.cpp
 	$(compiler) -c -o $(temp_obj_dir)/SimpleSocket.o $(src_dir)/SimpleSocket.cpp
-	$(compiler) -c -o $(temp_obj_dir)/RedirEngine.o $(src_dir)/RedirEngine.cpp
+	$(compiler) -c -o $(temp_obj_dir)/BaseRedirEngine.o $(src_dir)/BaseRedirEngine.cpp
+	$(compiler) -c -o $(temp_obj_dir)/ListenConnRedirEngine.o $(src_dir)/ListenConnRedirEngine.cpp
+	$(compiler) -c -o $(temp_obj_dir)/ListenListenRedirEngine.o $(src_dir)/ListenListenRedirEngine.cpp
+	$(compiler) -c -o $(temp_obj_dir)/ConnConnRedirEngine.o $(src_dir)/ConnConnRedirEngine.cpp
 	$(compiler) -c -o $(temp_obj_dir)/Main.o $(src_dir)/Main.cpp
 
 create_dirs:
