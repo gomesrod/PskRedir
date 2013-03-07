@@ -4,21 +4,12 @@
 #include "SimpleSocket.h"
 
 /**
-* The implementation of ListenConnRedirEngine for the Listen-Listen type of redirection.
+* The implementation of RedirEngine for the Listen-Listen type of redirection.
 */
 class ListenListenRedirEngine : public BaseRedirEngine {
 
 protected:
 	virtual void prepareEngine();
-	virtual void handleRedirection();
-	virtual void interruptCurrentActivity();
-
-private:
-	SimpleSocket port1;
-	SimpleSocket::ActiveConnection port1Conn;
-
-	SimpleSocket port2;
-	SimpleSocket::ActiveConnection port2Conn;
 
 	/**
 	* Handles the main daemon loop.
@@ -28,5 +19,19 @@ private:
 	* - Exchange packages until some of the nodes closes the connection.
 	* - start over...
 	*/
-	void handleRedirection(SimpleSocket& server);
+	virtual void handleRedirection();
+
+	virtual void interruptCurrentActivity();
+
+	//@Override
+	virtual bool handleSpecialDataOnForward(SimpleSocket::ActiveConnection& origin, SimpleSocket::ActiveConnection& dest, 
+								byte* data, int dataLen);
+private:
+	SimpleSocket port1;
+	SimpleSocket::ActiveConnection port1Conn;
+
+	SimpleSocket port2;
+	SimpleSocket::ActiveConnection port2Conn;
+
+	bool hasDisconnectNotification;
 };

@@ -26,22 +26,24 @@ public:
 	bool load(std::string configFilePath);
 	
 	inline OperationMode getMode();
-	inline std::string getClientIp();
-	inline short getClientPort();
-	inline std::string getForwardHost();
-	inline short getForwardPort();
+	inline std::string getFirstIp();
+	inline short getFirstPort();
+	inline std::string getSecondIp();
+	inline short getSecondPort();
+	inline std::string getNotification();
 
 	/**
 	* Format the configuration data for display.
 	*/
 	std::string prettyFormat();
 
-	private:
+private:
 	OperationMode mode;
-	std::string clientIp;
-	short clientPort;
-	std::string forwardHost;
-	short forwardPort;
+	std::string firstIp;
+	short firstPort;
+	std::string secondIp;
+	short secondPort;
+	std::string notification;
 	
 	/**
 	* Parses the string-representation of the operation mode.
@@ -54,24 +56,29 @@ inline AppConfig::OperationMode AppConfig::getMode()
 	return mode;
 }
 
-inline std::string AppConfig::getClientIp()
+inline std::string AppConfig::getFirstIp()
 {
-	return clientIp;
+	return firstIp;
 }
 
-inline short AppConfig::getClientPort()
+inline short AppConfig::getFirstPort()
 {
-	return clientPort;
+	return firstPort;
 }
 
-inline std::string AppConfig::getForwardHost()
+inline std::string AppConfig::getSecondIp()
 {
-	return forwardHost;
+	return secondIp;
 }
 
-inline short AppConfig::getForwardPort()
+inline short AppConfig::getSecondPort()
 {
-	return forwardPort;
+	return secondPort;
+}
+
+inline std::string AppConfig::getNotification()
+{
+	return notification;
 }
 
 #endif

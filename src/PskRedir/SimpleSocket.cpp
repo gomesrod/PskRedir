@@ -26,9 +26,11 @@ const int SimpleSocket::RECEIVE_TIMEOUT_MICROSECS = 1000;
 
 #ifdef WIN32
 #define ERROR_CODE_CONN_RESET WSAECONNRESET
+#define ERROR_CODE_CONN_ABORTED WSAECONNABORTED
 #define ERROR_CODE_BAD_SOCKET WSAEBADF
 #else
 #define ERROR_CODE_CONN_RESET ECONNRESET
+#define ERROR_CODE_CONN_ABORTED ECONNABORTED
 #define ERROR_CODE_BAD_SOCKET EBADF
 
 #define INVALID_SOCKET -1
@@ -200,7 +202,7 @@ SimpleSocket::ActiveConnection::ActiveConnection() :
 	connsocket(0)
 {
 }
-	
+
 SimpleSocket::ActiveConnection& SimpleSocket::ActiveConnection::operator=(const ActiveConnection& other) 
 {
 	connsocket = other.connsocket;
@@ -224,30 +226,18 @@ SimpleSocket::ActiveConnection::~ActiveConnection() {
 }
 
 int SimpleSocket::ActiveConnection::read(byte* databuffer, int buffsize) {
-	fd_set readfds = {0};
-	FD_ZERO(&readfds);
-// warning C4127: conditional expression is constant   - na macro FD_SET (VS 2010)
-#pragma warning(suppress : 4127)
-	FD_SET(connsocket, &readfds);
-
-	timeval timeout;
-	timeout.tv_sec = 0;
-	timeout.tv_usec = RECEIVE_TIMEOUT_MICROSECS;
-	
-	DEBUGMSG("FD_ISSET");
-	DEBUGNUM(FD_ISSET(connsocket, &readfds));
-	if (select(connsocket+1, &readfds, 0, 0, &timeout) < 0) {
-	  throw SocketException(pskutils::buildErrorMessage("select() err:", socketLastError()));
-	}
-	
-	DEBUGNUM(FD_ISSET(connsocket, &readfds));
-
-	if (FD_ISSET(connsocket, &readfds)) {
+	if (hasData()) {
 		int size = recv(connsocket, reinterpret_cast<char *>(databuffer), buffsize, 0);
 		
 		DEBUGNUM(size);
 
 		if (size < 0) {
+			int errcode = socketLastError();
+			if (errcode == ERROR_CODE_CONN_RESET || errcode == ERROR_CODE_CONN_ABORTED) {
+				peerActive = false; // The remote size has closed the connection
+				return -1;
+			}
+
 			throw SocketException(pskutils::buildErrorMessage("recv() err:", socketLastError()));
 		} else if (size == 0) {
 			peerActive = false;
@@ -257,12 +247,35 @@ int SimpleSocket::ActiveConnection::read(byte* databuffer, int buffsize) {
 			return size;
 		}
 	} else {
-		DEBUGMSG("select(): no data available");
+		DEBUGMSG("read: no data available");
 		return 0; // No data
 	}
 }
 
-bool SimpleSocket::ActiveConnection::write(byte * data, int len) {
+bool SimpleSocket::ActiveConnection::hasData() {
+	fd_set readfds = {0};
+	FD_ZERO(&readfds);
+
+// warning C4127: conditional expression is constant   - na macro FD_SET (VS 2010)
+#pragma warning(suppress : 4127)
+	FD_SET(connsocket, &readfds);
+
+	timeval timeout;
+	timeout.tv_sec = 0;
+	timeout.tv_usec = RECEIVE_TIMEOUT_MICROSECS;
+	
+	if (select(connsocket+1, &readfds, 0, 0, &timeout) < 0) {
+	  throw SocketException(pskutils::buildErrorMessage("select() err:", socketLastError()));
+	}
+
+	if (FD_ISSET(connsocket, &readfds)) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+bool SimpleSocket::ActiveConnection::sendData(const byte * data, int len) {
 	// Call the send function as many times as needed, in order to
 	// send the whole message.
 	int offset = 0;
@@ -271,10 +284,10 @@ bool SimpleSocket::ActiveConnection::write(byte * data, int len) {
 	while (bytesToSend > 0) {
 		// The amount of bytes already sent is used as an offset to send
 		// the rest of the message
-		int bytesSent = send(connsocket, reinterpret_cast<char *>(data + offset), len, 0);
+		int bytesSent = send(connsocket, reinterpret_cast<const char *>(data + offset), len, 0);
 		if (bytesSent < 0) {
 			int errcode = socketLastError();
-			if (errcode == ERROR_CODE_CONN_RESET) {
+			if (errcode == ERROR_CODE_CONN_RESET || errcode == ERROR_CODE_CONN_ABORTED) {
 				peerActive = false; // The remote size has closed the connection
 				return false;
 			}
@@ -289,11 +302,16 @@ bool SimpleSocket::ActiveConnection::write(byte * data, int len) {
 	return true;
 }
 
+bool SimpleSocket::ActiveConnection::sendData(string msg) {
+	return sendData(reinterpret_cast<const byte*>(msg.c_str()), msg.size()+1);
+}
+
 void SimpleSocket::ActiveConnection::destroy()
 {
 	if (connsocket > 0) {
 		closeSock(connsocket);
 		connsocket = 0;
+		peerActive = false;
 	}
 }
 

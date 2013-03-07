@@ -4,6 +4,10 @@
 #include <iostream>
 using namespace std;
 
+BaseRedirEngine::~BaseRedirEngine()
+{
+}
+
 int BaseRedirEngine::run() {
 	try {
 		SimpleSocket::initSocketLib();
@@ -46,11 +50,11 @@ void BaseRedirEngine::exchangePackagesUntilDisconnect(SimpleSocket::ActiveConnec
 		* Forward data from one side to the other, until some of them closes the connection.
 		*/ 
 		while (conn1.isPeerActive() && conn2.isPeerActive()) {
-			DEBUGMSG("Polling message from cliConn");
+			DEBUGMSG("Polling message from conn1");
 			forwardDataIfAvailable(conn1, conn2, &databuff, &databuffLen);
 
 			if (conn1.isPeerActive()) {
-				DEBUGMSG("Polling message from forwardConn");
+				DEBUGMSG("Polling message from conn2");
 				forwardDataIfAvailable(conn2, conn1, &databuff, &databuffLen);
 			}
 		}
@@ -86,8 +90,18 @@ void BaseRedirEngine::forwardDataIfAvailable(SimpleSocket::ActiveConnection& ori
 			// Ok. Send the message to the other side.
 			DEBUGSTR(*databuff);
 
-			dest.write(*databuff, bytesRead);
+			bool mustSend = handleSpecialDataOnForward(origin, dest, *databuff, bytesRead);
+			if (mustSend) {
+				dest.sendData(*databuff, bytesRead);
+			}
+
 			retry = false;
 		}
 	}
+}
+
+bool BaseRedirEngine::handleSpecialDataOnForward(SimpleSocket::ActiveConnection& , SimpleSocket::ActiveConnection& , 
+								byte* , int ) 
+{
+	return true;
 }

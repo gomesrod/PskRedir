@@ -1,13 +1,17 @@
 #include "ListenListenRedirEngine.h"
 #include "debug.h"
 
+using namespace std;
+
 void ListenListenRedirEngine::prepareEngine()
 {
-	port1.listen(config.getClientIp(), config.getClientPort());
+	port1.listen(config.getFirstIp(), config.getFirstPort());
 	DEBUGMSG("PORT1 socket listening");
 
-	port2.listen(config.getForwardHost(), config.getForwardPort());
+	port2.listen(config.getSecondIp(), config.getSecondPort());
 	DEBUGMSG("PORT2 socket listening");
+
+	hasDisconnectNotification = !config.getNotification().empty();
 }
 
 void ListenListenRedirEngine::handleRedirection()
@@ -43,4 +47,19 @@ void ListenListenRedirEngine::interruptCurrentActivity()
 {
 	port1.stopListening();
 	port2.stopListening();
+}
+
+bool ListenListenRedirEngine::handleSpecialDataOnForward(
+	SimpleSocket::ActiveConnection&, SimpleSocket::ActiveConnection& dest, 
+	byte* data, int dataLen)
+{
+	if (!hasDisconnectNotification) return true;
+
+	if (strncmp(reinterpret_cast<const char *>(data), config.getNotification().c_str(), dataLen) == 0) {
+		DEBUGMSG("DISCONNECT NOTIFICATION RECEIVED. DISCONNECTING RECEIVER...");
+		dest.destroy();
+		return false;
+	} else {
+		return true;
+	}
 }

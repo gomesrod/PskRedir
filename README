@@ -38,9 +38,12 @@ Too simple!
 Just copy the executable to any directory, and create a configuration file
 pskredir.conf containing a line with the following information
 
-0.0.0.0 LISTEN_PORT fwd_host FWD_PORT
+LISTEN_CONN 0.0.0.0 LISTEN_PORT fwd_host FWD_PORT
 
 Where:
+LISTEN_CONN is the identifier for the operation mode "Listen-Connect"
+            (this is not a variable, just type it verbatim)
+            More on operation modes later.
 0.0.0.0 = The interface on which the application listens for connections.
           Currently only the 0.0.0.0 (All interfaces) is supported.
 LISTEN_PORT = The port where clients will connect.
@@ -51,6 +54,77 @@ Start the executable and it will wait for client connections.
 When they connect, PskRedir itself opens a connection to the Forward
 Host and starts exchanging packages between both nodes.
 
+######################################################
+# Operation modes
+##
+Formerly only the traditional Listen-Connect mode was supported,
+as described above.
+
+But due to more complex redirect scenarios, the program now features
+two new operation modes:
+-> "Listen-Listen" : In this mode, passive sockets are opened on both
+   sides. Whenever these two sockets have a connected client, the network
+   traffic is forwarded between them.
+
+          [A]------> [PskRedir in Listen-Listen mode] <-------[B]
+       After A and B connect, packages are exchanged from one
+       host to the other.
+
+-> "Connect-Connect" : Active connections are created on both sides.
+   More specifically, a primary connection is made and kept permanently
+   open. When the peer transmits any data, the secondary connection is
+   created. Packages are exchanged until one of the sides disconnects.
+
+          [A] <------- [PskRedir in Connect-Connect mode]
+        First connects to a primary host, and waits for it to
+        send some data.
+          [A] <------ [PskRedir in Connect-Connect mode] ------> [B]
+        Then connects to the secondary host, and start exchanging
+        packages.
+
+Here is an example of how these new operation modes where used.
+
+Consider the following network scenario.
+
+------------------------------    --------------------------------------------
+|  [Remote Dev]  [Server1]   |    |    [Source Control]     [Dev2]  [Dev3]   |
+------------------------------    --------------------------------------------
+--- Network 1                     --- Network 2
+
+* Network 1 is a big client company network, where the servers are allocated.
+  (the server that is of interest to us is the development server "Server1".
+* Network 2 is a consulting company network, where the developers do their work
+  and store their source code.
+* Network 2 has a dedicated route to access the Server1, with some NAT-ing 
+  along the way. There is no route to go the opposite way, hosts from Network 1
+  cannot connect to addresses in Network 2.
+* One developer is dedicated to support the client on their own site, and still
+  has the need to access the Source Control system.
+
+How to enable this connection?
+That is how the PskRedir alternative modes came in. Two redirection services
+where combined like this:
+
+         |-----> LISTEN-LISTEN <------- CONNECT-CONNECT   
+         |       [Server1]               |    
+ [Remote Dev]                            |--->[Source Control]
+
+A LISTEN-LISTEN instance was activated on the Server1 machine. This have enabled
+the Remote Dev to open the initial connection as if it was connecting directly
+to the Source Control Service.
+A CONNECT-CONNECT instance then runs on the source control machine. This 
+intance opens the primary connection towards the Server1 (which is the only 
+possible way to connect both networks). The secondary connection is opened
+on-demand towards the Source Control service, which thinks that the client
+is connected directly!
+
+--------------------
+This is the case that originated the need for the alternative operating modes.
+Instances of PskRedir can be combined like building blocks to support
+more complex scenarios.
+
+Sample configuration files for all the operating modes are included in this
+project.
 
 ######################################################
 # Limitations

@@ -9,7 +9,7 @@
 using namespace std;
 
 void ListenConnRedirEngine::prepareEngine() {
-	server.listen(config.getClientIp(), config.getClientPort());
+	server.listen(config.getFirstIp(), config.getFirstPort());
 
 	DEBUGMSG("IN socket listening");
 }
@@ -23,7 +23,7 @@ void ListenConnRedirEngine::handleRedirection() {
 	// Start a new forward connection.
 	DEBUGMSG("Connecting to forward host...");
 	SimpleSocket::ActiveConnection forwardConn(SimpleSocket::connectToHost(
-			config.getForwardHost(), config.getForwardPort()));
+			config.getSecondIp(), config.getSecondPort()));
 
 	DEBUGMSG("Connection established. Start package forwarding...");
 

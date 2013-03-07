@@ -27,6 +27,7 @@ public:
 	*/
 	void interrupt();
 
+	virtual ~BaseRedirEngine();
 protected:
 
 	AppConfig config;
@@ -70,6 +71,15 @@ protected:
 	*/
 	void forwardDataIfAvailable(SimpleSocket::ActiveConnection& origin, SimpleSocket::ActiveConnection& dest,
 								byte** databuff, int* databuffLen);
+
+	/*
+	* Gives subclasses an opportunity to handle messages with a special meaning.
+	* The default implementation does nothing.
+	*
+	* Return true if the message must be forwarded after the handling.
+	*/
+	virtual bool handleSpecialDataOnForward(SimpleSocket::ActiveConnection& origin, SimpleSocket::ActiveConnection& dest, 
+								byte* data, int dataLen);
 };
 
 #endif

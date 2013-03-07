@@ -32,6 +32,8 @@ public:
 class SimpleSocket
 {
 public:
+	typedef unsigned char byte;
+
 	SimpleSocket();
 	~SimpleSocket();
 
@@ -77,8 +79,6 @@ public:
 	* Contains the read and write operations.
 	*/
 	class ActiveConnection {
-		typedef unsigned char byte;
-
 		friend ActiveConnection SimpleSocket::acceptConnection();
 		friend ActiveConnection SimpleSocket::connectToHost(std::string address, short port);
 
@@ -128,12 +128,18 @@ public:
 		int read(byte* databuffer, int buffsize);
 
 		/**
+		* Tells if this socket has any data available for reading.
+		*/
+		bool hasData();
+
+		/**
 		* Write data to the remote host.
 		* Return true if the write is sucessfull, false otherwise.
 		*
 		* On errors a SocketException is thrown.
 		*/
-		bool write(byte * data, int len);
+		bool sendData(const byte * data, int len);
+		bool sendData(std::string data);
 		
 		/**
 		* This status is set to false when any function detects that the remote host 

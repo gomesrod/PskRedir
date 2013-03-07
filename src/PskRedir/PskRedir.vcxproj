@@ -83,6 +83,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\%40rodrigo_projects\projetos\PskRedir\src\PskRedir\BaseRedirEngine.cpp" />
+    <ClCompile Include="..\..\..\..\..\%40rodrigo_projects\projetos\PskRedir\src\PskRedir\ConnConnRedirEngine.cpp" />
     <ClCompile Include="..\..\..\..\..\%40rodrigo_projects\projetos\PskRedir\src\PskRedir\ListenListenRedirEngine.cpp" />
     <ClCompile Include="AppConfig.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -92,6 +93,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\%40rodrigo_projects\projetos\PskRedir\src\PskRedir\BaseRedirEngine.h" />
+    <ClInclude Include="..\..\..\..\..\%40rodrigo_projects\projetos\PskRedir\src\PskRedir\ConnConnRedirEngine.h" />
     <ClInclude Include="..\..\..\..\..\%40rodrigo_projects\projetos\PskRedir\src\PskRedir\debug.h" />
     <ClInclude Include="..\..\..\..\..\%40rodrigo_projects\projetos\PskRedir\src\PskRedir\ListenListenRedirEngine.h" />
     <ClInclude Include="AppConfig.h" />

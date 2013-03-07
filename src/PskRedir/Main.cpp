@@ -4,6 +4,7 @@
 #include "SimpleSocket.h"
 #include "ListenConnRedirEngine.h"
 #include "ListenListenRedirEngine.h"
+#include "ConnConnRedirEngine.h"
 
 #include <iostream>
 #include <csignal>
@@ -45,6 +46,8 @@ int main(int argc, char** argv)
 		engine = new ListenConnRedirEngine;
 	} else if (config.getMode() == AppConfig::LISTEN_LISTEN) {
 		engine = new ListenListenRedirEngine;
+	} else if (config.getMode() == AppConfig::CONNECT_CONNECT) {
+		engine = new ConnConnRedirEngine;
 	} else {
 		// This is not possible,the mode was validated by the configuration parser
 		throw logic_error("Unknown operation mode");

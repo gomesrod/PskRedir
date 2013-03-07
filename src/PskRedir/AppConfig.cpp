@@ -53,7 +53,7 @@ bool AppConfig::load(string configFilePath)
 	vector<string> tokens;
 	pskutils::splitInWhitespaces(readbuff, tokens);
 
-	if (tokens.size() != 5) {
+	if (tokens.size() < 5 || tokens.size() > 6) {
 		cerr << "Invalid configuration data: " << readbuff << endl;
 		return false;
 	}
@@ -64,10 +64,13 @@ bool AppConfig::load(string configFilePath)
 		cerr << err.what() << endl;
 		return false;
 	}
-	this->clientIp = tokens[1];
-	this->clientPort = pskutils::parseNum<short>(tokens[2]);
-	this->forwardHost = tokens[3];
-	this->forwardPort = pskutils::parseNum<short>(tokens[4]);
+	this->firstIp = tokens[1];
+	this->firstPort = pskutils::parseNum<short>(tokens[2]);
+	this->secondIp = tokens[3];
+	this->secondPort = pskutils::parseNum<short>(tokens[4]);
+	if (tokens.size() == 6) {
+		this->notification = tokens[5];
+	}
 
 	return true;
 }
@@ -75,10 +78,14 @@ bool AppConfig::load(string configFilePath)
 string AppConfig::prettyFormat()
 {
 	stringstream ss;
-	ss << "Listen IP = " << clientIp;
-	ss << ", Listen Port = " << clientPort;
-	ss << ", Forward Host = " << forwardHost;
-	ss << ", Forward Port = " << forwardPort;
+	ss << "From: " << firstIp;
+	ss << ", Port= " << firstPort;
+	ss << " >> ";
+	ss << "To: " << secondIp;
+	ss << ", Port= " << secondPort;
+	if (!notification.empty()) {
+		ss << " ;Notification= " << notification;
+	}
 	return ss.str();
 }
 
@@ -88,6 +95,8 @@ AppConfig::OperationMode AppConfig::parseMode(std::string modeStr)
 		return LISTEN_CONNECT;
 	} else if (string("LISTEN_LISTEN") == modeStr) {
 		return LISTEN_LISTEN;
+	} else if (string("CONN_CONN") == modeStr) {
+		return CONNECT_CONNECT;
 	} else {
 		throw runtime_error(string("Invalid operation mode: ").append(modeStr));
 	}
